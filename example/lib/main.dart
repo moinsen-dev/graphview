@@ -82,7 +82,7 @@ class Home extends StatelessWidget {
                       ),
                     ),
                 child: Text(
-                  "Layered View (Sugiyama)",
+                  'Layered View (Sugiyama)',
                   style: TextStyle(fontSize: 30),
                 )),
             SizedBox(
@@ -112,11 +112,11 @@ class Home extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                 ),
                 onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LayerGraphPageFromJson(),
-                  ),
-                ),
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LayerGraphPageFromJson(),
+                      ),
+                    ),
                 child: Text(
                   'Layer Graph From Json ',
                   style: TextStyle(fontSize: 30),
@@ -153,7 +153,8 @@ class Home extends StatelessWidget {
 
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
+                  MaterialPageRoute(
+                      builder: (context) => GraphScreen(graph, builder, null)),
                 );
               },
               color: Colors.blueAccent,
@@ -206,7 +207,8 @@ class Home extends StatelessWidget {
 
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
+                  MaterialPageRoute(
+                      builder: (context) => GraphScreen(graph, builder, null)),
                 );
               },
               color: Colors.blueAccent,

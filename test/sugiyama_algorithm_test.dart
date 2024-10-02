@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:graphview/GraphView.dart';
 
 import 'example_trees.dart';
 
@@ -254,19 +254,12 @@ void main() {
       graph.addEdge(Node.Id(fromNodeId), Node.Id(toNodeId));
     });
 
-    final _configuration = SugiyamaConfiguration()
-      ..nodeSeparation = 15
-      ..levelSeparation = 15
-      ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
-
-    final algorithm = SugiyamaAlgorithm(_configuration);
-
     for (var i = 0; i < graph.nodeCount(); i++) {
       graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
     }
 
     var stopwatch = Stopwatch()..start();
-    var size = algorithm.run(graph, 10, 10);
+
     var timeTaken = stopwatch.elapsed.inMilliseconds;
 
     print('Timetaken $timeTaken ${graph.nodeCount()}');
