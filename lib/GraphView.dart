@@ -1,40 +1,30 @@
 library graphview;
 
-import 'dart:collection';
-import 'dart:math';
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
+import 'dart:math';
+
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:collection/collection.dart' show IterableExtension;
-
-part 'Graph.dart';
 
 part 'Algorithm.dart';
-
+part 'Edge.dart';
+part 'Graph.dart';
+part 'Node.dart';
 part 'edgerenderer/ArrowEdgeRenderer.dart';
-
 part 'edgerenderer/EdgeRenderer.dart';
-
 part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
-
 part 'layered/SugiyamaAlgorithm.dart';
-
 part 'layered/SugiyamaConfiguration.dart';
-
 part 'layered/SugiyamaEdgeData.dart';
-
 part 'layered/SugiyamaEdgeRenderer.dart';
-
 part 'layered/SugiyamaNodeData.dart';
-
 part 'tree/BuchheimWalkerAlgorithm.dart';
-
 part 'tree/BuchheimWalkerConfiguration.dart';
-
 part 'tree/BuchheimWalkerNodeData.dart';
-
 part 'tree/TreeEdgeRenderer.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
@@ -47,7 +37,12 @@ class GraphView extends StatefulWidget {
   final bool animated;
 
   GraphView(
-      {Key? key, required this.graph, required this.algorithm, this.paint, required this.builder, this.animated = true})
+      {Key? key,
+      required this.graph,
+      required this.algorithm,
+      this.paint,
+      required this.builder,
+      this.animated = true})
       : super(key: key);
 
   @override
@@ -55,10 +50,27 @@ class GraphView extends StatefulWidget {
 }
 
 class _GraphViewState extends State<GraphView> {
+  double _zoomLevel = 1.0;
+  final double _minZoom = 0.5;
+  final double _maxZoom = 2.0;
+
+  void _handleZoomIn() {
+    setState(() {
+      _zoomLevel = (_zoomLevel * 1.2).clamp(_minZoom, _maxZoom);
+    });
+  }
+
+  void _handleZoomOut() {
+    setState(() {
+      _zoomLevel = (_zoomLevel / 1.2).clamp(_minZoom, _maxZoom);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget graphWidget;
     if (widget.algorithm is FruchtermanReingoldAlgorithm) {
-      return _GraphViewAnimated(
+      graphWidget = _GraphViewAnimated(
         key: widget.key,
         graph: widget.graph,
         algorithm: widget.algorithm,
@@ -66,7 +78,7 @@ class _GraphViewState extends State<GraphView> {
         builder: widget.builder,
       );
     } else {
-      return _GraphView(
+      graphWidget = _GraphView(
         key: widget.key,
         graph: widget.graph,
         algorithm: widget.algorithm,
@@ -74,6 +86,65 @@ class _GraphViewState extends State<GraphView> {
         builder: widget.builder,
       );
     }
+
+    return Stack(
+      children: [
+        Transform.scale(
+          scale: _zoomLevel,
+          child: graphWidget,
+        ),
+        Align(
+          alignment: Alignment.bottomRight,
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: ZoomControls(
+              onZoomIn: _handleZoomIn,
+              onZoomOut: _handleZoomOut,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class ZoomControls extends StatelessWidget {
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+
+  const ZoomControls({
+    Key? key,
+    required this.onZoomIn,
+    required this.onZoomOut,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: EdgeInsets.all(8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.add, color: Colors.white),
+            onPressed: onZoomIn,
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+          ),
+          SizedBox(height: 8),
+          IconButton(
+            icon: Icon(Icons.remove, color: Colors.white),
+            onPressed: onZoomOut,
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -82,7 +153,12 @@ class _GraphView extends MultiChildRenderObjectWidget {
   final Algorithm algorithm;
   final Paint? paint;
 
-  _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, required NodeWidgetBuilder builder})
+  _GraphView(
+      {Key? key,
+      required this.graph,
+      required this.algorithm,
+      this.paint,
+      required NodeWidgetBuilder builder})
       : super(key: key, children: _extractChildren(graph, builder)) {
     assert(() {
       if (children.isEmpty) {
@@ -100,7 +176,7 @@ class _GraphView extends MultiChildRenderObjectWidget {
     final result = <Widget>[];
 
     graph.nodes.forEach((node) {
-      var widget = node.data ?? builder(node);
+      var widget = builder(node);
       result.add(widget);
     });
 
@@ -113,7 +189,8 @@ class _GraphView extends MultiChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderCustomLayoutBox renderObject) {
+  void updateRenderObject(
+      BuildContext context, RenderCustomLayoutBox renderObject) {
     renderObject
       ..graph = graph
       ..algorithm = algorithm
@@ -122,7 +199,9 @@ class _GraphView extends MultiChildRenderObjectWidget {
 }
 
 class RenderCustomLayoutBox extends RenderBox
-    with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
+    with
+        ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
   late Graph _graph;
   late Algorithm _algorithm;
   late Paint _paint;
@@ -243,8 +322,11 @@ class _GraphViewAnimated extends StatefulWidget {
   final stepMilis = 25;
 
   _GraphViewAnimated(
-      {Key? key, required this.graph, required this.algorithm, this.paint, required this.builder}) {
-  }
+      {Key? key,
+      required this.graph,
+      required this.algorithm,
+      this.paint,
+      required this.builder}) {}
 
   @override
   _GraphViewAnimatedState createState() => _GraphViewAnimatedState();
@@ -281,7 +363,8 @@ class _GraphViewAnimatedState extends State<_GraphViewAnimated> {
 
   @override
   Widget build(BuildContext context) {
-    algorithm.setDimensions(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
+    algorithm.setDimensions(
+        MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -293,7 +376,7 @@ class _GraphViewAnimatedState extends State<_GraphViewAnimated> {
         ...List<Widget>.generate(graph.nodeCount(), (index) {
           return Positioned(
             child: GestureDetector(
-              child: graph.nodes[index].data ?? widget.builder(graph.nodes[index]),
+              child: widget.builder(graph.nodes[index]),
               onPanUpdate: (details) {
                 graph.getNodeAtPosition(index).position += details.delta;
                 update();

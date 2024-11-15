@@ -107,7 +107,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
   Widget rectangleWidget(int? a) {
     return InkWell(
       onTap: () {
-        print('clicked');
+        print('clicked $a');
       },
       child: Container(
           padding: EdgeInsets.all(16),
